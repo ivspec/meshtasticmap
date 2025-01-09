@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Display a map on a webpage</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .menu {
+            position: fixed;
+            bottom: -150px;
+            left: 0;
+            backdrop-filter: blur(10px);
+            right: 0;
+            margin-left: 25px;
+            margin-top: 25px;
+            margin-right: 25px;
+            max-width: 100%;
+            width: calc(100% - 50px);
+            height: 150px;
+            background: rgba(24, 24, 24, 0.5);
+            border: 2px solid rgb(156, 23, 23);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            transition: bottom 0.3s ease-in-out;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+
+        }
+
+        .menu.visible {
+            bottom: 0;
+        }
+
+        .toggle-button {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #202020;
+            z-index: 1;
+            border: 2px solid rgba(40, 40, 40, 1);
+            color: #fff;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .toggle-button.active {
+            bottom: 190px;
+            background: #202020;
+            transform: translateX(-50%) rotate(180deg);
+            border: 2px solid rgba(40, 40, 40, 1);
+        }
+
+        .marker {
+            width: 50px;
+            height: 50px;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .node-small {
+            background-image: url('icons/ShortRangeNode.png');
+            width: 50px;
+            height: 50px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .node-medium {
+            background-image: url('icons/MediumRangeNode.png');
+            width: 50px;
+            height: 50px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .node-large {
+            background-image: url('icons/LongRangeNode.png');
+            width: 50px;
+            height: 50px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .map-marker {
+            cursor: move;
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        .map-marker.node-small {
+            background-image: url('icons/ShortRangeNode.png');
+            width: 40px;
+            height: 40px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .map-marker.node-medium {
+            background-image: url('icons/MediumRangeNode.png');
+            width: 40px;
+            height: 40px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .map-marker.node-large {
+            background-image: url('icons/LongRangeNode.png');
+            width: 40px;
+            height: 40px;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        /* Add new hover and dragging states */
+        .map-marker.enlarged {
+            width: 50px !important;
+            height: 50px !important;
+        }
+
+        /* Rest of the styles remain the same */
+        .separator {
+            width: 1px;
+            height: 50px;
+            background: #636363;
+            margin: 0 20px;
+        }
+
+        .coordinates {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            padding: 5px 10px;
+            margin: 0;
+            font-size: 11px;
+            line-height: 18px;
+            border-radius: 3px;
+            display: none;
+        }
+
+        .style-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1000;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .connectivity-toggle {
+            position: fixed;
+            top: 50px;
+            left: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1000;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu.terrain {
+            border: 2px solid rgba(40, 40, 40, 1);
+        }
+
+        .menu.design {
+            border: 2px solid rgba(40, 40, 40, 1);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 10px 10px rgba(0, 255, 255, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 0 20px 20px rgba(0, 255, 255, 0);
+            }
+        }
+
+        .pulse-circle {
+            animation: pulse .5s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div class="toggle-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </div>
+    <div class="menu">
+        <div class="marker node-small" draggable="true"></div>
+        <div class="separator"></div>
+        <div class="marker node-medium" draggable="true"></div>
+        <div class="separator"></div>
+        <div class="marker node-large" draggable="true"></div>
+    </div>
+
+    <div class="style-toggle">Toggle Style</div>
+    <div class="connectivity-toggle">Connectivity Range</div>
+
+    <pre id="coordinates" class="coordinates"></pre>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoic3BlYzUiLCJhIjoiY201aDg5M25mMGhtMjJxcHIzNXI2anhmdSJ9.GM8euMyGXDLcj0579AZZsg';
+        const coordinates = document.getElementById('coordinates');
+        let currentStyle = 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5';
+
+        // Store all custom layers and sources
+        let customLayers = [];
+        let customSources = {};
+        let points = []; // Array to store point coordinates
+        let sources = {}; // Map layerId to point index
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5', // Your custom style
+            center: [-97.709331834242, 38.4664331575975], // Using the center from your style JSON
+            zoom: 12.615511711378
+        });
+
+        // Add the debug code RIGHT AFTER the map initialization:
+        map.on('style.load', () => {
+            console.log('Style loaded successfully:', map.getStyle().name);
+            console.log('Current style URL:', currentStyle);
+        });
+
+        map.on('error', (e) => {
+            console.error('Mapbox error:', e.error);
+        });
+
+        const canvas = map.getCanvasContainer();
+        const menu = document.querySelector('.menu');
+        // Set the initial border color based on the initial map style
+        if (currentStyle === 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5') {
+            menu.classList.add('design');
+        } else {
+            menu.classList.add('terrain');
+        }
+
+        const toggleButton = document.querySelector('.toggle-button');
+        const styleToggleButton = document.querySelector('.style-toggle');
+
+        // Add custom icons for nodes
+        const addCustomMarker = (lng, lat, iconUrl) => {
+            const el = document.createElement('div');
+            el.style.backgroundImage = `url(${iconUrl})`;
+            el.style.width = '50px';
+            el.style.height = '50px';
+            el.style.backgroundSize = 'contain';
+            el.style.backgroundRepeat = 'no-repeat';
+
+            new mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map);
+        };
+
+        toggleButton.addEventListener('click', () => {
+            menu.classList.toggle('visible');
+            toggleButton.classList.toggle('active');
+        });
+
+        // Function to store current layers and sources
+        function storeCustomElements() {
+            customLayers = [];
+            customSources = {};
+
+            const style = map.getStyle();
+
+            // Store all circle layers and their sources
+            style.layers.forEach(layer => {
+                if (layer.id.startsWith('circle-') || layer.id.startsWith('line-')) {
+                    customLayers.push(layer);
+                    // Store the source data
+                    const sourceId = layer.source;
+                    if (sourceId && style.sources[sourceId]) {
+                        customSources[sourceId] = style.sources[sourceId];
+                    }
+                }
+            });
+        }
+
+        function restoreCustomElements() {
+            map.once('style.load', () => {
+                // Restore sources first
+                Object.entries(customSources).forEach(([id, source]) => {
+                    if (!map.getSource(id)) {
+                        map.addSource(id, source);
+                    }
+                });
+
+                // Restore layers with their original colors
+                customLayers.forEach(layer => {
+                    if (!map.getLayer(layer.id)) {
+                        // For circle layers, preserve the original colors
+                        if (layer.id.startsWith('circle-')) {
+                            const originalColor = layer.paint['circle-color'];
+                            const originalOpacity = layer.paint['circle-opacity'];
+                            const originalRadius = layer.paint['circle-radius'];
+
+                            map.addLayer({
+                                ...layer,
+                                paint: {
+                                    'circle-color': originalColor,
+                                    'circle-opacity': originalOpacity,
+                                    'circle-radius': originalRadius
+                                }
+                            });
+                        }
+                        // For line layers, preserve the original line colors
+                        else if (layer.id.startsWith('line-')) {
+                            const originalColor = layer.paint['line-color'];
+                            const originalWidth = layer.paint['line-width'];
+
+                            map.addLayer({
+                                ...layer,
+                                paint: {
+                                    'line-color': originalColor || '#FF5733',
+                                    'line-width': originalWidth || 2
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // Ensure lines are redrawn with correct colors
+                updateLines();
+            });
+        }
+
+        styleToggleButton.addEventListener('click', () => {
+            // Store current custom elements before changing style
+            storeCustomElements();
+
+            const isDesignMode = currentStyle === 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5';
+
+            // Toggle the style
+            currentStyle = isDesignMode ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5';
+            styleToggleButton.textContent = isDesignMode ? 'Terrain Mode' : 'Design Mode';
+
+            // Change the style and restore custom elements
+            map.setStyle(currentStyle);
+            restoreCustomElements();
+
+            // Update the menu border color class dynamically
+            if (isDesignMode) {
+                menu.classList.remove('design');
+                menu.classList.add('terrain'); // Terrain -> Green border
+            } else {
+                menu.classList.remove('terrain');
+                menu.classList.add('design'); // Design -> Black border
+            }
+        });
+
+
+        function calculateRadiusInPixels(latitude, zoomLevel) {
+            const earthCircumference = 40075017; // in meters
+            const metersPerPixel =
+                earthCircumference * Math.cos((latitude * Math.PI) / 180) /
+                Math.pow(2, zoomLevel + 8);
+            const radiusInMeters = 1609.345; // 2 miles in meters
+            return radiusInMeters / metersPerPixel;
+        }
+
+
+        function calculateRadiusInPixels(latitude, zoomLevel, nodeType) {
+            const earthCircumference = 40075017;
+            const metersPerPixel = earthCircumference * Math.cos((latitude * Math.PI) / 180) / Math.pow(2, zoomLevel + 8);
+
+            // Use doubled radius values
+            const ranges = {
+                'node-small': 6437.38,  // 4 miles radius (8 miles diameter)
+                'node-medium': 16093.44, // 10 miles radius (20 miles diameter)
+                'node-large': 32186.88  // 20 miles radius (40 miles diameter)
+            };
+
+            const radiusInMeters = ranges[nodeType] || ranges['node-small'];
+            return radiusInMeters / metersPerPixel;
+        }
+
+        function updateLines() {
+            // Remove existing lines
+            const existingLines = map.getStyle().layers.filter((layer) => layer.id.startsWith('line-'));
+            existingLines.forEach((line) => {
+                if (map.getLayer(line.id)) map.removeLayer(line.id);
+                if (map.getSource(line.id)) map.removeSource(line.id);
+            });
+
+            // Define ranges in meters (converting from miles)
+            const ranges = {
+                'node-small': 3218.69,  // 2 miles radius (4 miles diameter)
+                'node-medium': 8046.72, // 5 miles radius (10 miles diameter)
+                'node-large': 16093.44  // 10 miles radius (20 miles diameter)
+            };
+
+            // Check connections between all pairs of points
+            for (let i = 0; i < points.length; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    const distance = calculateDistance(points[i].coords, points[j].coords);
+                    const node1 = points[i].type;
+                    const node2 = points[j].type;
+
+                    // Get the larger of the two ranges
+                    const maxRange = Math.max(ranges[node1], ranges[node2]);
+
+                    // Draw line if points are within the larger range
+                    if (distance <= maxRange) {
+                        const lineId = `line-${i}-${j}`;
+                        map.addSource(lineId, {
+                            type: 'geojson',
+                            data: {
+                                type: 'Feature',
+                                geometry: {
+                                    type: 'LineString',
+                                    coordinates: [points[i].coords, points[j].coords],
+                                },
+                            },
+                        });
+
+                        map.addLayer({
+                            id: lineId,
+                            type: 'line',
+                            source: lineId,
+                            paint: {
+                                'line-opacity': 1,
+                                'line-width': 2,
+                                'line-color': '#FF5733',
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
+
+
+        const circles = document.querySelectorAll('.circle');
+
+        circles.forEach((circle) => {
+            circle.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('circleType', circle.className);
+            });
+        });
+
+        map.getCanvas().addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        const markers = document.querySelectorAll('.marker');
+        markers.forEach((marker) => {
+            marker.addEventListener('dragstart', (e) => {
+                const shapeClass = Array.from(marker.classList)
+                    .find(cls => ['node-small', 'node-medium', 'node-large'].includes(cls));
+                e.dataTransfer.setData('markerType', shapeClass);
+            });
+        });
+
+        function addMarkerHoverEffect(marker) {
+            const markerElement = marker.getElement();
+
+            const ranges = {
+                'node-small': 6437.38,  // 4 miles radius (8 miles diameter)
+                'node-medium': 16093.44, // 10 miles radius (20 miles diameter)
+                'node-large': 32186.88  // 20 miles radius (40 miles diameter)
+            };
+
+            let isClicked = false;
+            let animationFrame = null;
+            let currentCircleIds = null;
+
+            function calculateHoverRadius(meters, latitude, zoom) {
+                const earthCircumference = 40075017;
+                const metersPerPixel = earthCircumference * Math.cos((latitude * Math.PI) / 180) / Math.pow(2, zoom + 8);
+                return meters / metersPerPixel;
+            }
+
+            function updateEffectsOnZoom() {
+                if (currentCircleIds && map.getSource(currentCircleIds.hoverCircleId)) {
+                    const pointCoords = marker.getLngLat().toArray();
+                    const nodeType = Array.from(markerElement.classList)
+                        .find(cls => ['node-small', 'node-medium', 'node-large'].includes(cls));
+
+                    const radiusInPixels = calculateHoverRadius(ranges[nodeType], pointCoords[1], map.getZoom());
+
+                    // Update dashed border
+                    if (map.getLayer(currentCircleIds.dashedBorderId)) {
+                        map.setPaintProperty(currentCircleIds.dashedBorderId, 'circle-radius', radiusInPixels);
+                    }
+
+                    // Update ripple effect max radius
+                    if (map.getLayer(currentCircleIds.hoverCircleId)) {
+                        map.setPaintProperty(
+                            currentCircleIds.hoverCircleId,
+                            'circle-radius',
+                            ['interpolate', ['linear'], ['get', 'ripple'], 0, 0, 1, radiusInPixels]
+                        );
+                    }
+                }
+            }
+
+            function showEffects() {
+                hideEffects();
+
+                const pointCoords = marker.getLngLat().toArray();
+                const hoverCircleId = `hover-circle-${Date.now()}`;
+                const dashedBorderId = `dashed-border-${Date.now()}`;
+
+                const nodeType = Array.from(markerElement.classList)
+                    .find(cls => ['node-small', 'node-medium', 'node-large'].includes(cls));
+
+                const radiusInPixels = calculateHoverRadius(ranges[nodeType], pointCoords[1], map.getZoom());
+
+                // Add dashed border
+                map.addSource(dashedBorderId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: {
+                            type: 'Point',
+                            coordinates: pointCoords,
+                        },
+                    },
+                });
+
+                map.addLayer({
+                    id: dashedBorderId,
+                    type: 'circle',
+                    source: dashedBorderId,
+                    paint: {
+                        'circle-radius': radiusInPixels,
+                        'circle-color': 'transparent',
+                        'circle-stroke-color': '#04FF85',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-opacity': 0.8,
+                        'circle-stroke-dasharray': [4, 4]
+                    }
+                });
+
+                // Add ripple effect
+                map.addSource(hoverCircleId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: { ripple: 0 },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: pointCoords,
+                        },
+                    },
+                });
+
+                map.addLayer({
+                    id: hoverCircleId,
+                    type: 'circle',
+                    source: hoverCircleId,
+                    paint: {
+                        'circle-radius': ['interpolate', ['linear'], ['get', 'ripple'], 0, 0, 1, radiusInPixels],
+                        'circle-color': '#04FF85',
+                        'circle-opacity': ['interpolate', ['linear'], ['get', 'ripple'], 0, 0.5, 1, 0],
+                    },
+                });
+
+                currentCircleIds = { hoverCircleId, dashedBorderId };
+                markerElement.dataset.hoverCircleId = hoverCircleId;
+                markerElement.dataset.dashedBorderId = dashedBorderId;
+
+                let ripple = 0;
+                function animateRipple() {
+                    if (map.getLayer(hoverCircleId)) {
+                        ripple += 0.025;
+                        if (ripple > 1) ripple = 0;
+
+                        map.getSource(hoverCircleId).setData({
+                            type: 'Feature',
+                            properties: { ripple },
+                            geometry: {
+                                type: 'Point',
+                                coordinates: pointCoords,
+                            },
+                        });
+
+                        animationFrame = requestAnimationFrame(animateRipple);
+                    }
+                }
+                animateRipple();
+            }
+
+            function hideEffects() {
+                if (animationFrame) {
+                    cancelAnimationFrame(animationFrame);
+                    animationFrame = null;
+                }
+
+                const hoverCircleId = markerElement.dataset.hoverCircleId;
+                const dashedBorderId = markerElement.dataset.dashedBorderId;
+
+                if (hoverCircleId) {
+                    if (map.getLayer(hoverCircleId)) map.removeLayer(hoverCircleId);
+                    if (map.getSource(hoverCircleId)) map.removeSource(hoverCircleId);
+                    delete markerElement.dataset.hoverCircleId;
+                }
+
+                if (dashedBorderId) {
+                    if (map.getLayer(dashedBorderId)) map.removeLayer(dashedBorderId);
+                    if (map.getSource(dashedBorderId)) map.removeSource(dashedBorderId);
+                    delete markerElement.dataset.dashedBorderId;
+                }
+
+                currentCircleIds = null;
+            }
+
+            // Add zoom handler
+            map.on('zoom', updateEffectsOnZoom);
+
+            // Click handler
+            markerElement.addEventListener('click', () => {
+                isClicked = !isClicked;
+                if (isClicked) {
+                    showEffects();
+                } else {
+                    hideEffects();
+                }
+            });
+
+            // Hover handlers
+            markerElement.addEventListener('mouseenter', () => {
+                if (!isClicked) {
+                    showEffects();
+                }
+                markerElement.style.cursor = 'pointer';
+            });
+
+            markerElement.addEventListener('mouseleave', () => {
+                if (!isClicked) {
+                    hideEffects();
+                }
+                markerElement.style.cursor = '';
+            });
+
+            // Drag handlers
+            marker.on('dragstart', () => {
+                hideEffects();
+                isClicked = false;
+            });
+
+            marker.on('dragend', () => {
+                if (isClicked) {
+                    showEffects();
+                }
+            });
+        }
+
+
+
+        // Add new markers to the map
+        map.getCanvas().addEventListener('drop', (e) => {
+            e.preventDefault();
+            const markerType = e.dataTransfer.getData('markerType');
+            const { lng, lat } = map.unproject([e.clientX, e.clientY]);
+
+            const el = document.createElement('div');
+            el.className = `map-marker ${markerType}`;
+
+            const marker = new mapboxgl.Marker({
+                element: el,
+                draggable: true,
+            })
+                .setLngLat([lng, lat])
+                .addTo(map);
+
+            el.addEventListener('mouseenter', () => el.classList.add('enlarged'));
+            el.addEventListener('mouseleave', (event) => {
+                if (!el.classList.contains('dragging')) el.classList.remove('enlarged');
+            });
+
+            marker.on('dragstart', () => {
+                el.classList.add('dragging');
+                el.classList.add('enlarged');
+            });
+
+            marker.on('dragend', () => {
+                el.classList.remove('dragging');
+                el.classList.remove('enlarged');
+
+                const pos = marker.getLngLat();
+                const index = sources[el.dataset.markerId];
+                points[index].coords = [pos.lng, pos.lat];
+                updateLines();
+
+                if (connectivityEnabled) {
+                    hideConnectivityCircles();
+                    showConnectivityCircles();
+                }
+            });
+
+            const markerId = `marker-${Date.now()}`;
+            el.dataset.markerId = markerId;
+            points.push({
+                coords: [lng, lat],
+                type: markerType
+            });
+            sources[markerId] = points.length - 1;
+
+            addMarkerHoverEffect(marker);
+            updateLines();
+
+            if (connectivityEnabled) {
+                showConnectivityCircles();
+            }
+        });
+
+        const connectivityToggleButton = document.querySelector('.connectivity-toggle');
+        let connectivityEnabled = false; // Track the state of the toggle
+        let connectivityCircles = {}; // Store circle IDs for each marker
+
+        // Toggle Connectivity Range
+        connectivityToggleButton.addEventListener('click', () => {
+            connectivityEnabled = !connectivityEnabled;
+            connectivityToggleButton.textContent = connectivityEnabled ? "Disable Connectivity Range" : "Connectivity Range";
+
+            if (connectivityEnabled) {
+                showConnectivityCircles();
+            } else {
+                hideConnectivityCircles();
+            }
+        });
+
+        // Update zoom handler
+        map.on('zoom', () => {
+            if (connectivityEnabled) {
+                hideConnectivityCircles();
+                showConnectivityCircles();
+            }
+        });
+
+        // Function to show green circles around all markers
+        function showConnectivityCircles() {
+            points.forEach((point, index) => {
+                const circleId = `connectivity-circle-${index}`;
+                const borderCircleId = `connectivity-border-${index}`;
+                const radiusInPixels = calculateRadiusInPixels(point.coords[1], map.getZoom(), point.type);
+
+                // Add the filled circle
+                if (!map.getSource(circleId)) {
+                    map.addSource(circleId, {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: point.coords,
+                            },
+                        },
+                    });
+
+                    map.addLayer({
+                        id: circleId,
+                        type: 'circle',
+                        source: circleId,
+                        paint: {
+                            'circle-radius': radiusInPixels,
+                            'circle-color': '#04FF85',
+                            'circle-opacity': 0.2,
+                        }
+                    });
+
+                    // Add the dashed border
+                    map.addSource(borderCircleId, {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: point.coords,
+                            },
+                        },
+                    });
+
+                    map.addLayer({
+                        id: borderCircleId,
+                        type: 'circle',
+                        source: borderCircleId,
+                        paint: {
+                            'circle-radius': radiusInPixels,
+                            'circle-color': 'transparent',
+                            'circle-stroke-color': '#04FF85',
+                            'circle-stroke-width': 2,
+                            'circle-stroke-opacity': 0.8,
+                            'circle-stroke-dasharray': [4, 4]
+                        }
+                    });
+
+                    connectivityCircles[index] = {
+                        circle: circleId,
+                        border: borderCircleId
+                    };
+                }
+            });
+        }
+        function hideConnectivityCircles() {
+            Object.values(connectivityCircles).forEach((circles) => {
+                if (map.getLayer(circles.circle)) {
+                    map.removeLayer(circles.circle);
+                }
+                if (map.getSource(circles.circle)) {
+                    map.removeSource(circles.circle);
+                }
+                if (map.getLayer(circles.border)) {
+                    map.removeLayer(circles.border);
+                }
+                if (map.getSource(circles.border)) {
+                    map.removeSource(circles.border);
+                }
+            });
+            connectivityCircles = {};
+        }
+
+        // Update circle radius on zoom
+        map.on('zoom', () => {
+            if (connectivityEnabled) {
+                hideConnectivityCircles(); // Remove existing circles
+                showConnectivityCircles(); // Redraw circles with updated radius
+            }
+        });
+
+        function calculateDistance(coord1, coord2) {
+            const R = 6371e3;
+            const lat1 = (coord1[1] * Math.PI) / 180;
+            const lat2 = (coord2[1] * Math.PI) / 180;
+            const deltaLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
+            const deltaLng = ((coord2[0] - coord1[0]) * Math.PI) / 180;
+
+            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+
+    </script>
+</body>
+
+</html>
