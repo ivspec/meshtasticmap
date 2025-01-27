@@ -118,6 +118,24 @@
             align-items: center;
         }
 
+        .side-menu-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 15, 15, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.2s ease;
+        }
+
+        .side-menu-toggle:hover {
+            background: rgba(15, 15, 15, 0.95);
+        }
+
         .map-marker {
             cursor: move;
             transition: width 0.3s ease, height 0.3s ease;
@@ -151,6 +169,20 @@
         .map-marker.enlarged {
             width: 50px !important;
             height: 50px !important;
+        }
+
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            transition: right 0.3s ease-in-out;
+            z-index: 1000;
         }
 
         .separator {
@@ -478,8 +510,27 @@
         </div>
     </div>
 
-    <div class="style-toggle">Toggle Style</div>
-    <div class="connectivity-toggle">Connectivity Range</div>
+    <div class="side-menu">
+        <div class="side-menu-content">
+            <div class="side-menu-header">
+                <h2>Map Settings</h2>
+                <button class="side-menu-close">×</button>
+            </div>
+            <div class="layer-toggles">
+                <div class="layer-toggle">
+                    <div class="layer-icon">🌙</div>
+                    <span>Map Style</span>
+                    <div class="toggle-switch"></div>
+                </div>
+                <div class="layer-toggle">
+                    <div class="layer-icon">📡</div>
+                    <span>Connectivity Range</span>
+                    <div class="toggle-switch"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <pre id="coordinates" class="coordinates"></pre>
     <div class="modal-backdrop">
@@ -1404,11 +1455,60 @@
 
         // Update your device links to use onclick instead of href
         document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.device-name').forEach(device => {
-                device.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const productId = device.getAttribute('data-product-id');
-                    showProductModal(productId);
+            const sideMenu = document.querySelector('.side-menu');
+            const sideMenuClose = document.querySelector('.side-menu-close');
+
+            // Create and add the toggle button
+            const toggleButton = document.createElement('button');
+            toggleButton.className = 'side-menu-toggle';
+            toggleButton.innerHTML = '☰';
+            document.body.appendChild(toggleButton);
+
+            // Toggle menu visibility
+            toggleButton.addEventListener('click', () => {
+                sideMenu.classList.toggle('visible');
+            });
+
+            sideMenuClose.addEventListener('click', () => {
+                sideMenu.classList.remove('visible');
+            });
+
+            // Handle layer toggles
+            const toggles = document.querySelectorAll('.layer-toggle');
+
+            // Set initial states based on current map style and connectivity
+            const styleToggle = toggles[0].querySelector('.toggle-switch');
+            const connectivityToggle = toggles[1].querySelector('.toggle-switch');
+
+            if (currentStyle === 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5') {
+                styleToggle.classList.add('active');
+            }
+            if (connectivityEnabled) {
+                connectivityToggle.classList.add('active');
+            }
+
+            toggles.forEach((toggle, index) => {
+                const toggleSwitch = toggle.querySelector('.toggle-switch');
+
+                toggle.addEventListener('click', () => {
+                    toggleSwitch.classList.toggle('active');
+                    const isActive = toggleSwitch.classList.contains('active');
+
+                    if (index === 0) { // Map Style toggle
+                        const newStyle = isActive ?
+                            'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5' :
+                            'mapbox://styles/mapbox/dark-v11';
+                        currentStyle = newStyle;
+                        map.setStyle(newStyle);
+                        restoreCustomElements();
+                    } else if (index === 1) { // Connectivity toggle
+                        connectivityEnabled = isActive;
+                        if (isActive) {
+                            showConnectivityCircles();
+                        } else {
+                            hideConnectivityCircles();
+                        }
+                    }
                 });
             });
         });
