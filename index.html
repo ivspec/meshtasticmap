@@ -634,6 +634,65 @@
             zoom: 11 // Adjusted zoom level for city view
         });
 
+        // Initialize side menu elements
+        const sideMenu = document.querySelector('.side-menu');
+        const sideMenuClose = document.querySelector('.side-menu-close');
+
+        // Create and add the toggle button
+        const menuToggleBtn = document.createElement('button');
+        menuToggleBtn.className = 'side-menu-toggle';
+        menuToggleBtn.innerHTML = '☰';
+        document.body.appendChild(menuToggleBtn);
+
+        // Toggle menu visibility
+        menuToggleBtn.addEventListener('click', () => {
+            console.log('Menu toggle clicked'); // For debugging
+            sideMenu.classList.toggle('visible');
+        });
+
+        sideMenuClose.addEventListener('click', () => {
+            sideMenu.classList.remove('visible');
+        });
+
+        // Initialize layer toggles
+        const toggles = document.querySelectorAll('.layer-toggle');
+        const styleToggle = toggles[0].querySelector('.toggle-switch');
+        const connectivityToggle = toggles[1].querySelector('.toggle-switch');
+
+        // Set initial states
+        if (currentStyle === 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5') {
+            styleToggle.classList.add('active');
+        }
+        if (connectivityEnabled) {
+            connectivityToggle.classList.add('active');
+        }
+
+        // Add click handlers for toggles
+        toggles.forEach((toggle, index) => {
+            const toggleSwitch = toggle.querySelector('.toggle-switch');
+
+            toggle.addEventListener('click', () => {
+                toggleSwitch.classList.toggle('active');
+                const isActive = toggleSwitch.classList.contains('active');
+
+                if (index === 0) { // Map Style toggle
+                    const newStyle = isActive ?
+                        'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5' :
+                        'mapbox://styles/mapbox/dark-v11';
+                    currentStyle = newStyle;
+                    map.setStyle(newStyle);
+                    restoreCustomElements();
+                } else if (index === 1) { // Connectivity toggle
+                    connectivityEnabled = isActive;
+                    if (isActive) {
+                        showConnectivityCircles();
+                    } else {
+                        hideConnectivityCircles();
+                    }
+                }
+            });
+        });
+
         // Add the debug code RIGHT AFTER the map initialization:
         map.on('style.load', () => {
             console.log('Style loaded successfully:', map.getStyle().name);
@@ -1505,64 +1564,7 @@
         }
 
         // Update your device links to use onclick instead of href
-        document.addEventListener('DOMContentLoaded', () => {
-            const sideMenu = document.querySelector('.side-menu');
-            const sideMenuClose = document.querySelector('.side-menu-close');
 
-            // Create and add the toggle button
-            const toggleButton = document.createElement('button');
-            toggleButton.className = 'side-menu-toggle';
-            toggleButton.innerHTML = '☰';
-            document.body.appendChild(toggleButton);
-
-            // Toggle menu visibility
-            toggleButton.addEventListener('click', () => {
-                sideMenu.classList.toggle('visible');
-            });
-
-            sideMenuClose.addEventListener('click', () => {
-                sideMenu.classList.remove('visible');
-            });
-
-            // Handle layer toggles
-            const toggles = document.querySelectorAll('.layer-toggle');
-
-            // Set initial states based on current map style and connectivity
-            const styleToggle = toggles[0].querySelector('.toggle-switch');
-            const connectivityToggle = toggles[1].querySelector('.toggle-switch');
-
-            if (currentStyle === 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5') {
-                styleToggle.classList.add('active');
-            }
-            if (connectivityEnabled) {
-                connectivityToggle.classList.add('active');
-            }
-
-            toggles.forEach((toggle, index) => {
-                const toggleSwitch = toggle.querySelector('.toggle-switch');
-
-                toggle.addEventListener('click', () => {
-                    toggleSwitch.classList.toggle('active');
-                    const isActive = toggleSwitch.classList.contains('active');
-
-                    if (index === 0) { // Map Style toggle
-                        const newStyle = isActive ?
-                            'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5' :
-                            'mapbox://styles/mapbox/dark-v11';
-                        currentStyle = newStyle;
-                        map.setStyle(newStyle);
-                        restoreCustomElements();
-                    } else if (index === 1) { // Connectivity toggle
-                        connectivityEnabled = isActive;
-                        if (isActive) {
-                            showConnectivityCircles();
-                        } else {
-                            hideConnectivityCircles();
-                        }
-                    }
-                });
-            });
-        });
 
         // Close modal when clicking close button or outside
         closeButton.onclick = () => modal.style.display = 'none';
