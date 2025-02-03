@@ -1,0 +1,571 @@
+body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  #map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+  }
+  
+  .menu {
+    position: fixed;
+    bottom: -200px;
+    left: 0;
+    backdrop-filter: blur(16px);
+    right: 0;
+    margin: 0 25px;
+    max-width: 100%;
+    width: calc(100% - 50px);
+    height: 170px;
+    background: rgba(15, 15, 15, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    padding-top: 20px;
+    justify-content: space-evenly;
+    align-items: center;
+    transition: all 0.3s ease-in-out;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+  }
+  
+  .menu.visible {
+    bottom: 0;
+  }
+  
+  .toggle-button {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 15, 15, 0.85);
+    z-index: 1;
+    border: 2px solid rgba(40, 40, 40, 1);
+    color: #fff;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .toggle-button.active {
+    bottom: 200px;
+    background: rgba(15, 15, 15, 0.85);
+    transform: translateX(-50%) rotate(180deg);
+    border: 2px solid rgba(40, 40, 40, 1);
+  }
+  
+  .marker {
+    width: 50px;
+    height: 50px;
+    cursor: grab;
+    margin-bottom: 5px;
+  }
+  
+  .node-small {
+    background-image: url("icons/ShortRangeNode.png");
+    width: 50px;
+    height: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .node-medium {
+    background-image: url("icons/MediumRangeNode.png");
+    width: 50px;
+    height: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .node-large {
+    background-image: url("icons/LongRangeNode.png");
+    width: 50px;
+    height: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .map-marker {
+    cursor: move;
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+  
+  .map-marker.node-small {
+    background-image: url("icons/ShortRangeNode.png");
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+  
+  .map-marker.node-medium {
+    background-image: url("icons/MediumRangeNode.png");
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+  
+  .map-marker.node-large {
+    background-image: url("icons/LongRangeNode.png");
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+  
+  .map-marker.enlarged {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  
+  .separator {
+    width: 1px;
+    height: 100px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+  }
+  
+  .coordinates {
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    position: absolute;
+    bottom: 40px;
+    left: 10px;
+    padding: 5px 10px;
+    margin: 0;
+    font-size: 11px;
+    line-height: 18px;
+    border-radius: 3px;
+    display: none;
+  }
+  
+  .menu.terrain {
+    border: 2px solid rgba(40, 40, 40, 1);
+  }
+  
+  .menu.design {
+    border: 2px solid rgba(40, 40, 40, 1);
+  }
+  
+  .marker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    height: 100%;
+    padding-top: 0;
+  }
+  
+  .marker-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-family: "Inter", -apple-system, sans-serif;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: 0.3px;
+  }
+  
+  .device-list {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    font-family: "Inter", -apple-system, sans-serif;
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 400px;
+    justify-content: center;
+    min-width: 250px;
+    gap: 8px 12px;
+    line-height: 1.4;
+  }
+  
+  .device-name:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+  }
+  
+  .device-name {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .modal-content {
+    background: rgba(25, 25, 25, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    font-family: "Inter", -apple-system, sans-serif;
+    overflow-y: auto;
+    position: relative;
+    padding: 24px;
+    color: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 24px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  
+  .modal-close:hover {
+    opacity: 1;
+  }
+  
+  .product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .product-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  /* .product-image rule removed since it wasn’t used */
+  
+  .product-info {
+    flex: 1;
+  }
+  
+  .product-title {
+    font-size: 24px;
+    font-family: "Inter", -apple-system, sans-serif;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .product-price {
+    font-size: 20px;
+    color: #04ff85;
+    font-family: "Inter", -apple-system, sans-serif;
+    margin-bottom: 16px;
+  }
+  
+  .buy-button {
+    background: #04ff85;
+    color: black;
+    border: none;
+    padding: 12px 24px;
+    font-family: "Inter", -apple-system, sans-serif;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .buy-button:hover {
+    background: #00cc6a;
+    font-family: "Inter", -apple-system, sans-serif;
+  }
+  
+  .carousel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  
+  .carousel-slides {
+    display: flex;
+    transition: transform 0.3s ease;
+  }
+  
+  .carousel-slides img {
+    width: 300px;
+    height: 300px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  
+  .carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+  }
+  
+  .carousel-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .dropdown-menu {
+    position: absolute;
+    background: #0f0f0ff2;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    top: 40px;
+    left: 0;
+    z-index: 1000;
+    min-width: 150px;
+  }
+  
+  .map-controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #0f0f0ff2;
+    border-radius: 8px;
+    padding: 20px;
+    width: 250px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: "Inter", sans-serif;
+    color: #fff;
+  }
+  
+  .map-controls h3 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  
+  .map-controls hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 10px 0;
+  }
+  
+  .control-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #161616;
+    border: 1px solid #202020;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    transition: background 0.3s ease;
+  }
+  
+  .control-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .control-item label {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+  }
+  
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #666;
+    transition: 0.4s;
+    border-radius: 20px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider {
+    background-color: #04ff85;
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+  
+  .dropdown-menu.hidden {
+    display: none;
+  }
+  
+  .menu-item {
+    padding: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+  }
+  
+  .menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .carousel-btn.prev {
+    left: 10px;
+  }
+  
+  .carousel-btn.next {
+    right: 10px;
+  }
+  
+  .carousel-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+  }
+  
+  .dot.active {
+    background: white;
+  }
+  
+  .search-container {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 15, 15, 0.85);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .search-container input {
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    width: 200px;
+  }
+  
+  .search-container button {
+    padding: 8px;
+    border: none;
+    background: #04ff85;
+    color: black;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .search-container button:hover {
+    background: #00cc6a;
+  }
+  
+  .measurement-tool {
+    position: absolute;
+    top: 110px;
+    left: 10px;
+    z-index: 2;
+    background: rgba(15, 15, 15, 0.85);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  #measure-distance {
+    padding: 8px 12px;
+    background: #04ff85;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  
+  #measure-distance:hover {
+    background: #00cc6a;
+  }
+  
+  #measurement-result {
+    color: white;
+    font-size: 14px;
+  }
+  
