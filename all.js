@@ -597,11 +597,11 @@ const productData = {
     name: "Spec5 MiniTrekker",
     price: "$69.99",
     images: [
-      "Icons/ProductImages/MiniTrekker/Frame_3.png",
-      "Icons/ProductImages/MiniTrekker/Frame_2_f88a997d-6d97-437e-83da-4240d75afcf9.png",
-      "Icons/ProductImages/MiniTrekker/il_794xN.5905115400_qfh8 (1).jpg",
-      "Icons/ProductImages/MiniTrekker/il_794xN.5953198465_9k62.jpg",
-      "Icons/ProductImages/MiniTrekker/il_794xN_5905115500_aj23_jpg.jpg",
+      "./Icons/ProductImages/MiniTrekker/Frame_3.png",
+      ".\Icons/ProductImages/MiniTrekker/Frame_2_f88a997d-6d97-437e-83da-4240d75afcf9.png",
+      ".\Icons/ProductImages/MiniTrekker/il_794xN.5905115400_qfh8 (1).jpg",
+      ".\Icons/ProductImages/MiniTrekker/il_794xN.5953198465_9k62.jpg",
+      "./Icons/ProductImages/MiniTrekker/il_794xN_5905115500_aj23_jpg.jpg",
     ],
     description:
       "The Spec5 MiniTrekker is a compact LoRa radio device that delivers powerful off-grid communication capabilities in a pocket-sized form. Its durable PETG case and integrated clip make it easy to carry during hikes or outdoor missions. Designed for simplicity, it provides text messaging and GPS location sharing over a LoRa mesh network. The MiniTrekker is perfect for users who want a lightweight, efficient tool to stay connected without compromising portability or functionality.",
