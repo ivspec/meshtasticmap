@@ -1,1431 +1,160 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <title>SpecFive Build Your Mesh</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.css" rel="stylesheet">
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.css"
+      rel="stylesheet"
+    />
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
+    <link href="mesh-map-style.css" rel="stylesheet" />
+  </head>
 
-        #map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
-
-        .menu {
-            position: fixed;
-            bottom: -200px;
-            left: 0;
-            backdrop-filter: blur(16px);
-            right: 0;
-            margin: 0 25px;
-            max-width: 100%;
-            width: calc(100% - 50px);
-            height: 170px;
-            /* Increased height slightly */
-            background: rgba(15, 15, 15, 0.85);
-            /* Darker, more opaque background */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            /* Subtle border */
-            display: flex;
-            padding-top: 20px;
-            justify-content: space-evenly;
-            align-items: center;
-            transition: all 0.3s ease-in-out;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
-            /* Subtle shadow */
-        }
-
-        .menu.visible {
-            bottom: 0;
-        }
-
-        .toggle-button {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 15, 15, 0.85);
-            z-index: 1;
-            border: 2px solid rgba(40, 40, 40, 1);
-            color: #fff;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .toggle-button.active {
-            bottom: 200px;
-            background: rgba(15, 15, 15, 0.85);
-            transform: translateX(-50%) rotate(180deg);
-            border: 2px solid rgba(40, 40, 40, 1);
-        }
-
-        .marker {
-            width: 50px;
-            height: 50px;
-            cursor: grab;
-            margin-bottom: 5px;
-        }
-
-
-        .node-small {
-            background-image: url('./Icons/ShortRangeNode.png');
-            width: 50px;
-            height: 50px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            /* Added to ensure image is centered */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .node-medium {
-            background-image: url('./Icons/MediumRangeNode.png');
-            width: 50px;
-            height: 50px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            /* Added to ensure image is centered */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .node-large {
-            background-image: url('./Icons/LongRangeNode.png');
-            width: 50px;
-            height: 50px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            /* Added to ensure image is centered */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .map-marker {
-            cursor: move;
-            transition: width 0.3s ease, height 0.3s ease;
-        }
-
-        .map-marker.node-small {
-            background-image: url('./Icons/ShortRangeNode.png');
-            width: 40px;
-            height: 40px;
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-
-        .map-marker.node-medium {
-            background-image: url('./Icons/MediumRangeNode.png');
-            width: 40px;
-            height: 40px;
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-
-        .map-marker.node-large {
-            background-image: url('./Icons/LongRangeNode.png');
-            width: 40px;
-            height: 40px;
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-
-        /* Add new hover and dragging states */
-        .map-marker.enlarged {
-            width: 50px !important;
-            height: 50px !important;
-        }
-
-        .separator {
-            width: 1px;
-            height: 100px;
-            background: linear-gradient(to bottom,
-                    transparent,
-                    rgba(255, 255, 255, 0.1),
-                    transparent);
-        }
-
-        .coordinates {
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            position: absolute;
-            bottom: 40px;
-            left: 10px;
-            padding: 5px 10px;
-            margin: 0;
-            font-size: 11px;
-            line-height: 18px;
-            border-radius: 3px;
-            display: none;
-        }
-
-        .style-toggle {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            padding: 5px 10px;
-            cursor: pointer;
-            z-index: 1000;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .connectivity-toggle {
-            position: fixed;
-            top: 50px;
-            left: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            padding: 5px 10px;
-            cursor: pointer;
-            z-index: 1000;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .menu.terrain {
-            border: 2px solid rgba(40, 40, 40, 1);
-        }
-
-        .menu.design {
-            border: 2px solid rgba(40, 40, 40, 1);
-        }
-
-        .marker-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 12px;
-            height: 100%;
-            /* Take full height */
-            padding-top: 0;
-            /* Remove any top padding */
-        }
-
-        .marker-label {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
-            font-family: 'Inter', -apple-system, sans-serif;
-            font-weight: 500;
-            margin: 0;
-            letter-spacing: 0.3px;
-        }
-
-        .device-list {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 13px;
-            font-family: 'Inter', -apple-system, sans-serif;
-            display: flex;
-            flex-wrap: wrap;
-            max-width: 400px;
-            justify-content: center;
-            min-width: 250px;
-            gap: 8px 12px;
-            line-height: 1.4;
-        }
-
-        .device-name:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.9);
-            transform: translateY(-2px);
-        }
-
-        .device-name {
-            text-decoration: none;
-            color: rgba(255, 255, 255, 0.6);
-            padding: 4px 8px;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .modal-backdrop {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: rgba(25, 25, 25, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            font-family: 'Inter', -apple-system, sans-serif;
-            ;
-            overflow-y: auto;
-            position: relative;
-            padding: 24px;
-            color: white;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 24px;
-            opacity: 0.7;
-            transition: opacity 0.2s ease;
-        }
-
-        .modal-close:hover {
-            opacity: 1;
-        }
-
-        .product-details {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .product-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .product-image {
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-        }
-
-        .product-info {
-            flex: 1;
-        }
-
-        .product-title {
-            font-size: 24px;
-            font-family: 'Inter', -apple-system, sans-serif;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .product-price {
-            font-size: 20px;
-            color: #04FF85;
-            font-family: 'Inter', -apple-system, sans-serif;
-            ;
-            margin-bottom: 16px;
-        }
-
-        .buy-button {
-            background: #04FF85;
-            color: black;
-            border: none;
-            padding: 12px 24px;
-            font-family: 'Inter', -apple-system, sans-serif;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .buy-button:hover {
-            background: #00cc6a;
-            font-family: 'Inter', -apple-system, sans-serif;
-        }
-
-        .carousel-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            overflow: hidden;
-            border-radius: 8px;
-        }
-
-        .carousel-slides {
-            display: flex;
-            transition: transform 0.3s ease;
-        }
-
-        .carousel-slides img {
-            width: 300px;
-            height: 300px;
-            object-fit: contain;
-            flex-shrink: 0;
-        }
-
-        .carousel-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background 0.3s ease;
-        }
-
-        .carousel-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
-        }
-
-        .carousel-btn.prev {
-            left: 10px;
-        }
-
-        .carousel-btn.next {
-            right: 10px;
-        }
-
-        .carousel-dots {
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-        }
-
-        .dot.active {
-            background: white;
-        }
-    </style>
-</head>
-
-<body>
+  <body>
     <div id="map"></div>
+
+    <div class="search-container">
+      <input
+        type="text"
+        id="location-search"
+        placeholder="Search for a location..."
+      />
+      <button onclick="searchLocation()">Search</button>
+    </div>
+
+    <div class="measurement-tool">
+      <button id="measure-distance">Measure Distance</button>
+      <div id="measurement-result"></div>
+    </div>
+
+    <div class="map-controls">
+      <h3>Map Layers</h3>
+      <hr />
+      <div class="control-item">
+        <label for="designModeToggle">Terrain Mode</label>
+        <label class="switch">
+          <input type="checkbox" id="designModeToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="control-item">
+        <label for="connectivityToggle">Connectivity Range</label>
+        <label class="switch">
+          <input type="checkbox" id="connectivityToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="control-item">
+        <label for="elevationToggle">Elevation Data</label>
+        <label class="switch">
+          <input type="checkbox" id="elevationToggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
     <div class="toggle-button">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="18 15 12 9 6 15"></polyline>
-        </svg>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
     </div>
     <div class="menu">
-        <div class="marker-container">
-            <div class="marker node-small" draggable="true"></div>
-            <div class="marker-label">Range 1~2 Miles</div>
-            <div class="device-list">
-                <span class="device-name" data-product-id="minitrekker">MiniTrekker</span>
-                <span class="device-name" data-product-id="spectre">Spectre</span>
-                <span class="device-name" data-product-id="meshclip">MeshClip</span>
-            </div>
+      <div class="marker-container">
+        <div class="marker node-small" draggable="true"></div>
+        <div class="marker-label">Range 1~2 Miles</div>
+        <div class="device-list">
+          <span class="device-name" data-product-id="minitrekker"
+            >MiniTrekker</span
+          >
+          <span class="device-name" data-product-id="spectre">Spectre</span>
+          <span class="device-name" data-product-id="meshclip">MeshClip</span>
         </div>
-        <div class="separator"></div>
-        <div class="marker-container">
-            <div class="marker node-medium" draggable="true"></div>
-            <div class="marker-label">Range 2~5 Miles</div>
-            <div class="device-list">
-                <span class="device-name" data-product-id="trekker">Trekker</span>
-                <span class="device-name" data-product-id="trekkerbravo">Trekker BRAVO</span>
-                <span class="device-name" data-product-id="trekkerutility">Trekker Utility</span>
-                <span class="device-name" data-product-id="beacon">Beacon</span>
-                <span class="device-name" data-product-id="beaconXL">Beacon XL+</span>
-                <span class="device-name" data-product-id="pulse">Pulse</span>
-                <span class="device-name" data-product-id="ranger">Ranger</span>
-                <span class="device-name" data-product-id="rangermagnum">Ranger Magnum</span>
-            </div>
+      </div>
+      <div class="separator"></div>
+      <div class="marker-container">
+        <div class="marker node-medium" draggable="true"></div>
+        <div class="marker-label">Range 2~5 Miles</div>
+        <div class="device-list">
+          <span class="device-name" data-product-id="trekker">Trekker</span>
+          <span class="device-name" data-product-id="trekkerbravo"
+            >Trekker BRAVO</span
+          >
+          <span class="device-name" data-product-id="trekkerutility"
+            >Trekker Utility</span
+          >
+          <span class="device-name" data-product-id="beacon">Beacon</span>
+          <span class="device-name" data-product-id="beaconXL">Beacon XL+</span>
+          <span class="device-name" data-product-id="pulse">Pulse</span>
+          <span class="device-name" data-product-id="ranger">Ranger</span>
+          <span class="device-name" data-product-id="rangermagnum"
+            >Ranger Magnum</span
+          >
         </div>
-        <div class="separator"></div>
-        <div class="marker-container">
-            <div class="marker node-large" draggable="true"></div>
-            <div class="marker-label">Range 5~10 Miles</div>
-            <div class="device-list">
-                <span class="device-name" data-product-id="relay">Relay</span>
-                <span class="device-name" data-product-id="copilot">Copilot</span>
-            </div>
+      </div>
+      <div class="separator"></div>
+      <div class="marker-container">
+        <div class="marker node-large" draggable="true"></div>
+        <div class="marker-label">Range 5~10 Miles</div>
+        <div class="device-list">
+          <span class="device-name" data-product-id="relay">Relay</span>
+          <span class="device-name" data-product-id="copilot">Copilot</span>
         </div>
+      </div>
     </div>
 
-    <div class="style-toggle">Toggle Style</div>
-    <div class="connectivity-toggle">Connectivity Range</div>
+    <div class="style-toggle">
+      Toggle Style
+      <div class="dropdown-menu hidden">
+        <div class="menu-item">Terrain Mode</div>
+        <div class="menu-item">Dark Mode</div>
+      </div>
+    </div>
+
+    <div class="connectivity-toggle">
+      Connectivity Range
+      <div class="dropdown-menu hidden">
+        <div class="menu-item">Enable</div>
+        <div class="menu-item">Disable</div>
+      </div>
+    </div>
 
     <pre id="coordinates" class="coordinates"></pre>
     <div class="modal-backdrop">
-        <div class="modal-content">
-            <button class="modal-close">&times;</button>
-            <div class="product-details">
-                <div class="product-header">
-                    <div class="carousel-container">
-                        <div class="carousel-slides"></div>
-                        <button class="carousel-btn prev">❮</button>
-                        <button class="carousel-btn next">❯</button>
-                        <div class="carousel-dots"></div>
-                    </div>
-                    <div class="product-info">
-                        <h2 class="product-title"></h2>
-                        <div class="product-price"></div>
-                        <button class="buy-button">BUY NOW</button>
-                    </div>
-                </div>
-                <div class="product-description"></div>
+      <div class="modal-content">
+        <button class="modal-close">&times;</button>
+        <div class="product-details">
+          <div class="product-header">
+            <div class="carousel-container">
+              <div class="carousel-slides"></div>
+              <button class="carousel-btn prev">❮</button>
+              <button class="carousel-btn next">❯</button>
+              <div class="carousel-dots"></div>
             </div>
+            <div class="product-info">
+              <h2 class="product-title"></h2>
+              <div class="product-price"></div>
+              <button class="buy-button">BUY NOW</button>
+            </div>
+          </div>
+          <div class="product-description"></div>
         </div>
+      </div>
     </div>
-    <script>
-        mapboxgl.accessToken = 'pk.eyJ1Ijoic3BlYzUiLCJhIjoiY201aDg5M25mMGhtMjJxcHIzNXI2anhmdSJ9.GM8euMyGXDLcj0579AZZsg';
-        const coordinates = document.getElementById('coordinates');
-        let currentStyle = 'mapbox://styles/mapbox/dark-v11';
-
-        // Store all custom layers and sources
-        let customLayers = [];
-        let customSources = {};
-        let points = []; // Array to store point coordinates
-        let sources = {}; // Map layerId to point index
-
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/dark-v11',
-            center: [-97.7431, 30.2672], // Austin coordinates: longitude, latitude
-            zoom: 11 // Adjusted zoom level for city view
-        });
-
-        // Add the debug code RIGHT AFTER the map initialization:
-        map.on('style.load', () => {
-            console.log('Style loaded successfully:', map.getStyle().name);
-            console.log('Current style URL:', currentStyle);
-        });
-
-        map.on('error', (e) => {
-            console.error('Mapbox error:', e.error);
-        });
-
-        const canvas = map.getCanvasContainer();
-        const menu = document.querySelector('.menu');
-        // Set the initial border color based on the initial map style
-        if (currentStyle === 'mapbox://styles/mapbox/dark-v11') {
-            menu.classList.add('terrain');
-        } else {
-            menu.classList.add('design');
-        }
-
-        const toggleButton = document.querySelector('.toggle-button');
-        const styleToggleButton = document.querySelector('.style-toggle');
-
-        // Add custom icons for nodes
-        const addCustomMarker = (lng, lat, iconUrl) => {
-            const el = document.createElement('div');
-            el.style.backgroundImage = `url(${iconUrl})`;
-            el.style.width = '50px';
-            el.style.height = '50px';
-            el.style.backgroundSize = 'contain';
-            el.style.backgroundRepeat = 'no-repeat';
-
-            new mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(map);
-        };
-
-        toggleButton.addEventListener('click', () => {
-            menu.classList.toggle('visible');
-            toggleButton.classList.toggle('active');
-        });
-
-        // Function to store current layers and sources
-        function storeCustomElements() {
-            customLayers = [];
-            customSources = {};
-
-            const style = map.getStyle();
-
-            // Store all circle layers and their sources
-            style.layers.forEach(layer => {
-                if (layer.id.startsWith('circle-') || layer.id.startsWith('line-')) {
-                    customLayers.push(layer);
-                    // Store the source data
-                    const sourceId = layer.source;
-                    if (sourceId && style.sources[sourceId]) {
-                        customSources[sourceId] = style.sources[sourceId];
-                    }
-                }
-            });
-        }
-
-        function restoreCustomElements() {
-            map.once('style.load', () => {
-                // Restore sources first
-                Object.entries(customSources).forEach(([id, source]) => {
-                    if (!map.getSource(id)) {
-                        map.addSource(id, source);
-                    }
-                });
-
-                // Restore layers with their original colors
-                customLayers.forEach(layer => {
-                    if (!map.getLayer(layer.id)) {
-                        // For circle layers, preserve the original colors
-                        if (layer.id.startsWith('circle-')) {
-                            const originalColor = layer.paint['circle-color'];
-                            const originalOpacity = layer.paint['circle-opacity'];
-                            const originalRadius = layer.paint['circle-radius'];
-
-                            map.addLayer({
-                                ...layer,
-                                paint: {
-                                    'circle-color': originalColor,
-                                    'circle-opacity': originalOpacity,
-                                    'circle-radius': originalRadius
-                                }
-                            });
-                        }
-                        // For line layers, preserve the original line colors
-                        else if (layer.id.startsWith('line-')) {
-                            const originalColor = layer.paint['line-color'];
-                            const originalWidth = layer.paint['line-width'];
-
-                            map.addLayer({
-                                ...layer,
-                                paint: {
-                                    'line-color': originalColor || '#FF5733',
-                                    'line-width': originalWidth || 2
-                                }
-                            });
-                        }
-                    }
-                });
-
-                // Ensure lines are redrawn with correct colors
-                updateLines();
-            });
-        }
-
-        styleToggleButton.addEventListener('click', () => {
-            // Store current custom elements before changing style
-            storeCustomElements();
-
-            const isDarkMode = currentStyle === 'mapbox://styles/mapbox/dark-v11';
-
-            // Toggle the style
-            currentStyle = isDarkMode ? 'mapbox://styles/spec5/cm5lkyjq4007s01qodz7745x5' : 'mapbox://styles/mapbox/dark-v11';
-            styleToggleButton.textContent = isDarkMode ? 'Design Mode' : 'Terrain Mode';
-
-            // Change the style and restore custom elements
-            map.setStyle(currentStyle);
-            restoreCustomElements();
-
-            // Update the menu border color class dynamically
-            if (isDarkMode) {
-                menu.classList.remove('terrain');
-                menu.classList.add('design'); // Design -> Black border
-            } else {
-                menu.classList.remove('design');
-                menu.classList.add('terrain'); // Terrain -> Green border
-            }
-        });
-
-
-        function calculateRadiusInPixels(latitude, zoomLevel) {
-            const earthCircumference = 40075017; // in meters
-            const metersPerPixel =
-                earthCircumference * Math.cos((latitude * Math.PI) / 180) /
-                Math.pow(2, zoomLevel + 8);
-            const radiusInMeters = 1609.345; // 2 miles in meters
-            return radiusInMeters / metersPerPixel;
-        }
-
-
-        function calculateRadiusInPixels(latitude, zoomLevel, nodeType) {
-            const earthCircumference = 40075017;
-            const metersPerPixel = earthCircumference * Math.cos((latitude * Math.PI) / 180) / Math.pow(2, zoomLevel + 8);
-
-            // Use doubled radius values
-            const ranges = {
-                'node-small': 6437.38,  // 4 miles radius (8 miles diameter)
-                'node-medium': 16093.44, // 10 miles radius (20 miles diameter)
-                'node-large': 32186.88  // 20 miles radius (40 miles diameter)
-            };
-
-            const radiusInMeters = ranges[nodeType] || ranges['node-small'];
-            return radiusInMeters / metersPerPixel;
-        }
-
-        function updateLines() {
-            // Remove existing lines
-            const existingLines = map.getStyle().layers.filter((layer) => layer.id.startsWith('line-'));
-            existingLines.forEach((line) => {
-                if (map.getLayer(line.id)) map.removeLayer(line.id);
-                if (map.getSource(line.id)) map.removeSource(line.id);
-            });
-
-            // Define ranges in meters (converting from miles)
-            const ranges = {
-                'node-small': 3218.69,  // 2 miles radius (4 miles diameter)
-                'node-medium': 8046.72, // 5 miles radius (10 miles diameter)
-                'node-large': 16093.44  // 10 miles radius (20 miles diameter)
-            };
-
-            // Add console.log to debug
-            console.log("Points array:", points);
-
-            // Check connections between all pairs of points
-            for (let i = 0; i < points.length; i++) {
-                for (let j = i + 1; j < points.length; j++) {
-                    const distance = calculateDistance(points[i].coords, points[j].coords);
-                    const node1 = points[i].type;
-                    const node2 = points[j].type;
-
-                    // Debug logging
-                    console.log(`Checking distance between points ${i} and ${j}:`, distance);
-                    console.log(`Node types:`, node1, node2);
-
-                    // Get the larger of the two ranges
-                    const maxRange = Math.max(ranges[node1], ranges[node2]);
-                    console.log(`Max range:`, maxRange);
-
-                    // Draw line if points are within the larger range
-                    if (distance <= maxRange) {
-                        console.log(`Drawing line between points ${i} and ${j}`);
-                        const lineId = `line-${i}-${j}`;
-                        map.addSource(lineId, {
-                            type: 'geojson',
-                            data: {
-                                type: 'Feature',
-                                geometry: {
-                                    type: 'LineString',
-                                    coordinates: [points[i].coords, points[j].coords],
-                                },
-                            },
-                        });
-
-                        map.addLayer({
-                            id: lineId,
-                            type: 'line',
-                            source: lineId,
-                            paint: {
-                                'line-opacity': 1,
-                                'line-width': 2,
-                                'line-color': '#FF5733',
-                            }
-                        });
-                    }
-                }
-            }
-        }
-
-
-        const circles = document.querySelectorAll('.circle');
-
-        circles.forEach((circle) => {
-            circle.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('circleType', circle.className);
-            });
-        });
-
-        map.getCanvas().addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-        const markers = document.querySelectorAll('.marker');
-        markers.forEach((marker) => {
-            marker.addEventListener('dragstart', (e) => {
-                const shapeClass = Array.from(marker.classList)
-                    .find(cls => ['node-small', 'node-medium', 'node-large'].includes(cls));
-                e.dataTransfer.setData('markerType', shapeClass);
-            });
-        });
-
-        function addMarkerHoverEffect(marker) {
-            const markerElement = marker.getElement();
-
-            const ranges = {
-                'node-small': 6437.38,  // 4 miles radius (8 miles diameter)
-                'node-medium': 16093.44, // 10 miles radius (20 miles diameter)
-                'node-large': 32186.88  // 20 miles radius (40 miles diameter)
-            };
-
-            let isClicked = false;
-            let currentCircleIds = null;
-
-            function calculateHoverRadius(meters, latitude, zoom) {
-                const earthCircumference = 40075017;
-                const metersPerPixel = earthCircumference * Math.cos((latitude * Math.PI) / 180) / Math.pow(2, zoom + 8);
-                return meters / metersPerPixel;
-            }
-
-            function updateEffectsOnZoom() {
-                if (currentCircleIds && map.getSource(currentCircleIds.hoverCircleId)) {
-                    const pointCoords = marker.getLngLat().toArray();
-                    const nodeType = Array.from(markerElement.classList)
-                        .find(cls => ['node-small', 'node-medium', 'node-large'].includes(cls));
-
-                    const radiusInPixels = calculateHoverRadius(ranges[nodeType], pointCoords[1], map.getZoom());
-
-                    // Update the circle layer with new radius
-                    if (map.getLayer(currentCircleIds.hoverCircleId)) {
-                        map.setPaintProperty(
-                            currentCircleIds.hoverCircleId,
-                            'circle-radius',
-                            radiusInPixels
-                        );
-                    }
-                }
-            }
-
-            // Add throttled zoom handler to improve performance
-            let zoomTimeout;
-            map.on('zoom', () => {
-                if (zoomTimeout) {
-                    window.cancelAnimationFrame(zoomTimeout);
-                }
-                zoomTimeout = window.requestAnimationFrame(updateEffectsOnZoom);
-            });
-
-            function showEffects() {
-                hideEffects();
-
-                const pointCoords = marker.getLngLat().toArray();
-                const hoverCircleId = `hover-circle-${Date.now()}`;
-
-                const nodeType = Array.from(markerElement.classList)
-                    .find(cls => ['node-small', 'node-medium', 'node-large'].includes(cls));
-
-                const radiusInPixels = calculateHoverRadius(ranges[nodeType], pointCoords[1], map.getZoom());
-
-                // Add static circle with improved visibility settings
-                map.addSource(hoverCircleId, {
-                    type: 'geojson',
-                    data: {
-                        type: 'Feature',
-                        geometry: {
-                            type: 'Point',
-                            coordinates: pointCoords,
-                        },
-                    },
-                });
-
-                // Store existing line layers
-                const existingLines = map.getStyle().layers.filter((layer) => layer.id.startsWith('line-'));
-
-                // Remove line layers (but keep their sources)
-                existingLines.forEach((line) => {
-                    if (map.getLayer(line.id)) {
-                        map.removeLayer(line.id);
-                    }
-                });
-
-                // Add the circle layer
-                map.addLayer({
-                    id: hoverCircleId,
-                    type: 'circle',
-                    source: hoverCircleId,
-                    paint: {
-                        'circle-radius': radiusInPixels,
-                        'circle-color': '#04FF85',
-                        'circle-opacity': 0.2,
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#04FF85',
-                        'circle-stroke-opacity': 0.3,
-                    },
-                });
-
-                currentCircleIds = { hoverCircleId };
-                markerElement.dataset.hoverCircleId = hoverCircleId;
-
-                // Restore line layers on top
-                existingLines.forEach((line) => {
-                    map.addLayer({
-                        id: line.id,
-                        type: 'line',
-                        source: line.source,
-                        paint: {
-                            'line-opacity': 1,
-                            'line-width': 2,
-                            'line-color': '#FF5733',
-                        }
-                    });
-                });
-            }
-
-            function hideEffects() {
-                const hoverCircleId = markerElement.dataset.hoverCircleId;
-
-                if (hoverCircleId) {
-                    if (map.getLayer(hoverCircleId)) map.removeLayer(hoverCircleId);
-                    if (map.getSource(hoverCircleId)) map.removeSource(hoverCircleId);
-                    delete markerElement.dataset.hoverCircleId;
-                }
-
-                currentCircleIds = null;
-            }
-
-            // Click handler
-            markerElement.addEventListener('click', () => {
-                isClicked = !isClicked;
-                if (isClicked) {
-                    showEffects();
-                } else {
-                    hideEffects();
-                }
-            });
-
-            // Hover handlers
-            markerElement.addEventListener('mouseenter', () => {
-                if (!isClicked) {
-                    showEffects();
-                }
-                markerElement.style.cursor = 'pointer';
-            });
-
-            markerElement.addEventListener('mouseleave', () => {
-                if (!isClicked) {
-                    hideEffects();
-                }
-                markerElement.style.cursor = '';
-            });
-
-            // Drag handlers
-            marker.on('dragstart', () => {
-                hideEffects();
-                isClicked = false;
-            });
-
-            marker.on('dragend', () => {
-                if (isClicked) {
-                    showEffects();
-                }
-            });
-        }
-
-
-
-        // Add new markers to the map
-        map.getCanvas().addEventListener('drop', (e) => {
-            e.preventDefault();
-            const markerType = e.dataTransfer.getData('markerType');
-            const { lng, lat } = map.unproject([e.clientX, e.clientY]);
-
-            const el = document.createElement('div');
-            el.className = `map-marker ${markerType}`;
-
-            const marker = new mapboxgl.Marker({
-                element: el,
-                draggable: true,
-            })
-                .setLngLat([lng, lat])
-                .addTo(map);
-            el.addEventListener('wheel', (e) => {
-                e.stopPropagation();
-            }, true);
-            el.addEventListener('mouseenter', () => el.classList.add('enlarged'));
-            el.addEventListener('mouseleave', (event) => {
-                if (!el.classList.contains('dragging')) el.classList.remove('enlarged');
-            });
-
-            marker.on('dragstart', () => {
-                el.classList.add('dragging');
-                el.classList.add('enlarged');
-            });
-
-            marker.on('dragend', () => {
-                el.classList.remove('dragging');
-                el.classList.remove('enlarged');
-
-                const pos = marker.getLngLat();
-                const index = sources[el.dataset.markerId];
-                points[index].coords = [pos.lng, pos.lat];
-                updateLines();
-
-                // First remove any existing circles to ensure lines are added after
-                if (connectivityEnabled) {
-                    hideConnectivityCircles();
-                }
-
-                // Then update lines
-                updateLines();
-
-                // Then show circles again
-                if (connectivityEnabled) {
-                    showConnectivityCircles();
-                }
-            });
-
-            const markerId = `marker-${Date.now()}`;
-            el.dataset.markerId = markerId;
-            points.push({
-                coords: [lng, lat],
-                type: markerType
-            });
-            sources[markerId] = points.length - 1;
-
-            addMarkerHoverEffect(marker);
-            updateLines();
-
-            // First remove any existing circles to ensure lines are added after
-            if (connectivityEnabled) {
-                hideConnectivityCircles();
-            }
-
-            // Then update lines
-            updateLines();
-
-            // Then show circles again
-            if (connectivityEnabled) {
-                showConnectivityCircles();
-            }
-        });
-
-        const connectivityToggleButton = document.querySelector('.connectivity-toggle');
-        let connectivityEnabled = false; // Track the state of the toggle
-        let connectivityCircles = {}; // Store circle IDs for each marker
-
-        // Toggle Connectivity Range
-        connectivityToggleButton.addEventListener('click', () => {
-            connectivityEnabled = !connectivityEnabled;
-            connectivityToggleButton.textContent = connectivityEnabled ? "Disable Connectivity Range" : "Connectivity Range";
-
-            if (connectivityEnabled) {
-                showConnectivityCircles();
-            } else {
-                hideConnectivityCircles();
-            }
-        });
-
-        // Update zoom handler
-        map.on('zoom', () => {
-            if (connectivityEnabled) {
-                hideConnectivityCircles();
-                showConnectivityCircles();
-            }
-        });
-
-        // Function to show green circles around all markers
-
-        function showConnectivityCircles() {
-            points.forEach((point, index) => {
-                const circleId = `connectivity-circle-${index}`;
-                const radiusInPixels = calculateRadiusInPixels(point.coords[1], map.getZoom(), point.type);
-
-                // Add the filled circle
-                if (!map.getSource(circleId)) {
-                    map.addSource(circleId, {
-                        type: 'geojson',
-                        data: {
-                            type: 'Feature',
-                            properties: {},
-                            geometry: {
-                                type: 'Point',
-                                coordinates: point.coords,
-                            },
-                        },
-                    });
-
-                    map.addLayer({
-                        id: circleId,
-                        type: 'circle',
-                        source: circleId,
-                        paint: {
-                            'circle-radius': radiusInPixels,
-                            'circle-color': '#04FF85',
-                            'circle-opacity': 0.2,
-                        }
-                    });
-
-                    connectivityCircles[index] = {
-                        circle: circleId
-                    };
-                }
-            });
-
-            // Update lines after adding circles to ensure they appear on top
-            updateLines();
-        }
-
-        // Helper function to create circle points
-        // Helper function to create circle points properly
-
-
-        // Animation function for rotating the border
-
-        function hideConnectivityCircles() {
-            Object.values(connectivityCircles).forEach((circles) => {
-                if (map.getLayer(circles.circle)) {
-                    map.removeLayer(circles.circle);
-                }
-                if (map.getSource(circles.circle)) {
-                    map.removeSource(circles.circle);
-                }
-                if (map.getLayer(circles.border)) {
-                    map.removeLayer(circles.border);
-                }
-                if (map.getSource(circles.border)) {
-                    map.removeSource(circles.border);
-                }
-            });
-            connectivityCircles = {};
-        }
-
-        // Update circle radius on zoom
-        map.on('zoom', () => {
-            if (connectivityEnabled) {
-                hideConnectivityCircles(); // Remove existing circles
-                showConnectivityCircles(); // Redraw circles with updated radius
-            }
-        });
-
-        function calculateDistance(coord1, coord2) {
-            const R = 6371e3;
-            const lat1 = (coord1[1] * Math.PI) / 180;
-            const lat2 = (coord2[1] * Math.PI) / 180;
-            const deltaLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
-            const deltaLng = ((coord2[0] - coord1[0]) * Math.PI) / 180;
-
-            const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-                Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c;
-        }
-
-
-        // Product data - you can expand this with your actual product details
-        const productData = {
-            'minitrekker': {
-                name: 'Spec5 MiniTrekker',
-                price: '$69.99',
-                images: ['Icons/ProductImages/MiniTrekker/Frame_3.png',
-                    'Icons/ProductImages/MiniTrekker/Frame_2_f88a997d-6d97-437e-83da-4240d75afcf9.png',
-                    'Icons/ProductImages/MiniTrekker/il_794xN.5905115400_qfh8 (1).jpg',
-                    'Icons/ProductImages/MiniTrekker/il_794xN.5953198465_9k62.jpg',
-                    'Icons/ProductImages/MiniTrekker/il_794xN_5905115500_aj23_jpg.jpg',
-
-                ],
-                description: 'The Spec5 MiniTrekker is a compact LoRa radio device that delivers powerful off-grid communication capabilities in a pocket-sized form. Its durable PETG case and integrated clip make it easy to carry during hikes or outdoor missions. Designed for simplicity, it provides text messaging and GPS location sharing over a LoRa mesh network. The MiniTrekker is perfect for users who want a lightweight, efficient tool to stay connected without compromising portability or functionality.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'spectre': {
-                name: 'Spec5 Spectre',
-                price: '$79.99',
-                images: ['Icons/ProductImages/spectre/Front.png',
-                    'Icons/ProductImages/spectre/Front-Right.png',
-                    'Icons/ProductImages/spectre/Right.png',
-                    'Icons/ProductImages/spectre/Back-Left.png',
-                    'Icons/ProductImages/spectre/Back.png',
-                    'Icons/ProductImages/spectre/Back-Right.png',
-                    'Icons/ProductImages/spectre/Left.png',
-                    'Icons/ProductImages/spectre/Front-Left.png',
-
-                    'Icons/ProductImages/spectre/Front_75f440ef-2528-401a-9af6-af9c64aef96f.png',
-                    'Icons/ProductImages/spectre/Front-Right_7c879769-1ae9-4d0e-b818-18c4b1681975.png',
-                    'Icons/ProductImages/spectre/Left_8c5b3459-3934-4cb7-80e9-030bfc083567.png',
-                    'Icons/ProductImages/spectre/Back-Left_cd465e05-6331-4a49-9859-e42db0b84382.png',
-                    'Icons/ProductImages/spectre/Back_a2c2607f-7a62-4e12-b29d-2e504b0574c9.png',
-                    'Icons/ProductImages/spectre/Back-Right_1997ec07-2371-44a7-8979-6df4d09261d6.png',
-                    'Icons/ProductImages/spectre/Right_3867a306-c12a-4643-ae7f-1f17c22734c2.png',
-                    'Icons/ProductImages/spectre/Front-Left_a72340de-d30a-43e6-86a3-93ccffd34a05.png',
-
-                    'Icons/ProductImages/spectre/Front_3e0c27cd-66da-4bc6-890a-e7cba52c1e9e.png',
-                    'Icons/ProductImages/spectre/Front-Right_06154fea-36c8-40bc-9f37-7cf3828a6f2f.png',
-                    'Icons/ProductImages/spectre/Right_96444966-eb12-4e5a-b84d-255547c536f2.png',
-                    'Icons/ProductImages/spectre/Back-Left_f71f5549-0cae-4c62-b2c2-aedaed59cb92.png',
-                    'Icons/ProductImages/spectre/Back_719838b1-c807-4472-ad31-694f2781d036.png',
-                    'Icons/ProductImages/spectre/Back-Right_3196b03e-7a35-46fc-a53b-e0812be429b1.png',
-                    'Icons/ProductImages/spectre/Left_7712f3c2-b8b3-4ae6-8ef9-65238a8a2529.png',
-                    'Icons/ProductImages/spectre/Front-Left_7a3db96d-ea66-47ea-b536-83dec13c6a7a.png',
-                ],
-                description: 'The Spec5 Spectre is a versatile LoRa radio designed for secure communication and navigation. Featuring two-way voice communication, it allows real-time interaction with your group over off-grid channels. Its LoRa mesh network ensures reliable text messaging, enabling seamless coordination in remote areas. With an intuitive touch interface and extended battery life of up to 8 hours, the Spectre is a reliable companion for adventurers and network builders seeking advanced connectivity tools.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'meshclip': {
-                name: 'Spec5 MeshClip',
-                price: '$79.99',
-                images: ['Icons/ProductImages/meshclip/Frame53 (2).png',
-                    'Icons/ProductImages/meshclip/Frame54.png',
-
-                ],
-                description: 'The Spec5 MeshClip is a portable LoRa device designed for ultimate convenience and mobility. Its compact design includes a steel ring, allowing it to be magnetically attached to the back of your phone for seamless on-the-go communication. The MeshClip operates within a LoRa mesh network, enabling users to send text messages and share GPS locations. Perfect for hikers, campers, and preppers, the MeshClip provides essential connectivity without adding unnecessary bulk.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'trekker': {
-                name: 'Spec5 Trekker',
-                price: '$119.99',
-                images: ['Icons/ProductImages/trekker/Spec5Green-Trekker-Front (1).png',
-                    'Icons/ProductImages/trekker/Spec5Green_-_Trekker_-_Back.png',
-                    'Icons/ProductImages/trekker/Frame_59.png',
-                    'Icons/ProductImages/trekker/Frame_60.png',
-                    'Icons/ProductImages/trekker/Frame_57.png',
-                    'Icons/ProductImages/trekker/Frame_58.png',
-                    'Icons/ProductImages/trekker/Frame_61.png',
-                    'Icons/ProductImages/trekker/Frame_62.png',
-                    'Icons/ProductImages/trekker/Frame_63.png',
-                    'Icons/ProductImages/trekker/Frame_64.png',
-
-                ],
-                description: "The Spec5 Trekker is a portable LoRa radio designed for off-grid explorers and communication enthusiasts. It offers GPS location sharing and text messaging through a robust LoRa mesh network, providing reliable connectivity even in areas with no cellular coverage. The Trekker's lightweight design and intuitive interface make it easy to carry and use during outdoor activities. Whether you're coordinating with a team or mapping your journey, the Trekker is a versatile solution for staying connected beyond the grid.",
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'trekkerbravo': {
-                name: 'Spec5 Trekker BRAVO',
-                price: '$119.99',
-                images: ['Icons/ProductImages/trekker bravo/Frame_35.png',
-                    'Icons/ProductImages/trekker bravo/Frame_36.png',
-                    'Icons/ProductImages/trekker bravo/Frame_49_7890065e-7303-44ec-8272-758b1ccef05b.png',
-                    'Icons/ProductImages/trekker bravo/Frame_50.png',
-                    'Icons/ProductImages/trekker bravo/Frame_105 (1).png',
-                    'Icons/ProductImages/trekker bravo/Frame_106.png',
-                    'Icons/ProductImages/trekker bravo/Frame_107.png',
-                    'Icons/ProductImages/trekker bravo/Frame_108.png',
-                    'Icons/ProductImages/trekker bravo/Frame_51_89d6a815-3a3e-4c9a-9968-aef3db2d46c6.png',
-                    'Icons/ProductImages/trekker bravo/Frame_52.png',
-                ],
-                description: 'The Spec5 Trekker BRAVO takes the original Trekker to the next level with upgraded hardware and enhanced capabilities. It delivers reliable LoRa network integration for text messaging and precise GPS location sharing, ensuring effective communication even in the most remote areas. The BRAVO includes a high-gain antenna for extended range and improved signal clarity. With its rugged, lightweight design and advanced connectivity features, it’s the perfect device for adventurers seeking uncompromised performance.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'trekkerutility': {
-                name: 'Spec5 Trekker Utility',
-                price: '$139.99',
-                images: ['Icons/ProductImages/trekker utility/Frame_1 (1).png',
-                    'Icons/ProductImages/trekker utility/IMG_5486.png',
-                    'Icons/ProductImages/trekker utility/IMG_5478.png',
-                    'Icons/ProductImages/trekker utility/IMG_5490 (1).png',
-                    'Icons/ProductImages/trekker utility/IMG_5476.png',
-                    'Icons/ProductImages/trekker utility/IMG_5455.png',
-                    'Icons/ProductImages/trekker utility/IMG_5426.png',
-                ],
-                description: 'The Spec5 Trekker Utility is a high-performance LoRa radio built for users who demand extended functionality. With its enhanced battery life of up to 16 hours of active use or 48 hours on standby, it’s perfect for longer missions or adventures. The device features built-in environmental sensors that provide real-time temperature, pressure, and humidity data, helping users make informed decisions in the field. It also includes built-in speakers allowing for audible alerts. Its seamless integration with LoRa networks ensures reliable communication and coordination, making it a must-have for outdoor professionals and hobbyists alike.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'beacon': {
-                name: 'Spec5 Beacon',
-                price: '$179.99',
-                images: ['Icons/ProductImages/beacon/Frame_93.png',
-                    'Icons/ProductImages/beacon/Frame_94.png',
-                    'Icons/ProductImages/beacon/Frame_39.png',
-                    'Icons/ProductImages/beacon/Frame_40_5da501f9-fc51-4a24-9e92-3ab449edf8d4.png',
-                    'Icons/ProductImages/beacon/Frame_103 (1).png',
-                    'Icons/ProductImages/beacon/Frame_104 (1).png',
-                    'Icons/ProductImages/beacon/Frame_95.png',
-                    'Icons/ProductImages/beacon/Frame_96.png',
-                ],
-                description: 'The Spec5 Beacon is a LoRa radio device tailored for extending mesh network coverage in outdoor or remote settings. Its integrated solar panel extends the battery life by 1 to 2 days in optimal sunlight, ensuring consistent operation during extended activities. The Beacon seamlessly integrates into your LoRa network, enabling long-range communication and enhancing connectivity with other devices. Perfect for building or expanding personal networks, it’s a key component for those passionate about off-grid communication systems.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'beaconXL': {
-                name: 'Spec5 Beacon XL+',
-                price: '$189.99',
-                images: ['Icons/ProductImages/beacon XL+/Frame99 (1).png',
-                    'Icons/ProductImages/beacon XL+/Frame100 (2).png',
-                    'Icons/ProductImages/beacon XL+/Frame102 (2).png',
-                    'Icons/ProductImages/beacon XL+/Frame101 (2).png',
-                ],
-                description: 'The Spec5 Beacon XL is a powerhouse LoRa radio designed to extend network coverage across larger areas. Equipped with dual high-efficiency solar panels, it significantly increases battery life, ensuring up to 2 additional days of operation under optimal sunlight conditions. The Beacon XL is perfect for users setting up permanent or semi-permanent nodes in their LoRa networks, offering enhanced range and reliability. Whether for emergency preparedness or outdoor expeditions, the Beacon XL is an essential component for building robust, long-range communication systems.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'pulse': {
-                name: 'Spec5 Pulse Pack',
-                price: '$239.99',
-                images: ['Icons/ProductImages/pulse/APC_0258-2.jpg',
-                    'Icons/ProductImages/pulse/APC_0234 (1).jpg',
-                    'Icons/ProductImages/pulse/APC_0236 (1).jpg',
-                    'Icons/ProductImages/pulse/APC_0249_3729713d-0d5f-4d5d-9d4a-ec524bdc1cfe.jpg',
-                    'Icons/ProductImages/pulse/APC_0242_af57af54-cfa5-4719-bbd7-3bf11a11b717.jpg',
-                ],
-                description: 'The Spec5 Pulse Pack includes two Spec5 Pulses, compact devices designed to provide reliable, off-grid communication through secure LoRa mesh networks. Each device enables two-way voice communication, allowing real-time group interaction without the need for cellular coverage. The Spec5 Pulse also supports text messaging and GPS location sharing, ensuring precise coordination and tracking in remote environments. Its rugged design can endure harsh conditions, and with an 8-hour battery life, it’s built for extended missions. Perfect for adventurers, search-and-rescue operations, and industrial use, the Pulse Pack delivers dependable communication and location-sharing capabilities wherever traditional networks fail.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'ranger': {
-                name: 'Spec5 Ranger',
-                price: '$179.99',
-                images: ['Icons/ProductImages/ranger/Frame_97 (1).png',
-                    'Icons/ProductImages/ranger/Frame_98.png',
-                    'Icons/ProductImages/ranger/Frame_43.png',
-                    'Icons/ProductImages/ranger/Frame_44.png',
-                    'Icons/ProductImages/ranger/Frame_7_86c3e183-a5f5-445e-82c5-8f405c3bbb30.png',
-                    'Icons/ProductImages/ranger/Frame_1_69fb7958-06b0-41f0-b031-b24c4588e0c1.png',
-                ],
-                description: 'The Spec5 Ranger combines advanced LoRa communication with user-friendly hardware to meet the needs of outdoor enthusiasts and network builders. Featuring a touchscreen and a navigation ball for precise control, it allows users to manage their LoRa mesh networks with ease. It also comes with a full QWERTY keyboard allowing for use without the need to connect to your phone. Its GPS functionality supports real-time location sharing, and the device enables long-range text communication even in remote environments. The Ranger is ideal for users seeking a powerful, all-in-one device for creating and managing their custom networks.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'rangermagnum': {
-                name: 'Spec5 Ranger Magnum',
-                price: '$199.99',
-                images: ['Icons/ProductImages/ranger magnum/APC_0312.jpg',
-                    'Icons/ProductImages/ranger magnum/APC_0309-2.jpg',
-                    'Icons/ProductImages/ranger magnum/APC_0315.jpg',
-                    'Icons/ProductImages/ranger magnum/APC_0311.jpg',
-                    'Icons/ProductImages/ranger magnum/APC_0308-2.jpg',
-                    'Icons/ProductImages/ranger magnum/APC_0316.jpg',
-
-                ],
-                description: 'With double the battery life, the Spec5 Ranger Magnum is built for longer adventures and demanding use. This advanced LoRa communication device combines practical features with ease of use, including a touchscreen and navigation ball for intuitive control of your LoRa mesh networks. The full QWERTY keyboard allows for seamless operation without the need to connect to a phone, while the built-in GPS functionality supports real-time location sharing and long-range text communication, even in remote environments.',
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'relay': {
-                name: 'Spec5 Relay',
-                price: '$274.99',
-                images: ['Icons/ProductImages/relay/Frame10_f40010ab-b64d-476e-9cee-2a1733426d25.webp',
-                    'Icons/ProductImages/relay/il_794xN_5870309442_5fdw_jpg_b66fc76d-6fed-4a39-982d-4c256bd9cbaf.webp',
-                    'Icons/ProductImages/relay/il_794xN_5870309476_dgjm_jpg_f63af1c4-8181-40a4-b336-06461b129ada.webp',
-                    'Icons/ProductImages/relay/il_794xN_5870309422_5zo2_jpg_e3d13bc3-11c7-4b6b-bfbd-fea223ca12c0.webp',
-                    'Icons/ProductImages/relay/IMG_5141_1.jpg',
-                    'Icons/ProductImages/relay/il_794xN_5870309846_3zkf_jpg_899dc991-6e65-4360-bbf5-e47c6c264f71.webp',
-
-
-                ],
-                description: "The Spec5 Relay is a solar-powered LoRa node designed to expand your network's reach effortlessly. Featuring a high-efficiency solar panel and internal battery, it can autonomously operate for extended periods, providing reliable communication coverage in remote areas. The Relay excels in enhancing the range of your LoRa mesh, making it a vital tool for building robust, long-distance communication networks. With its easy deployment, it’s an ideal choice for off-grid enthusiasts aiming to increase their network’s capabilities.",
-                shopifyId: 'your-shopify-product-id'
-            },
-
-            'copilot': {
-                name: 'Spec5 Copilot',
-                price: '$139.99',
-                images: ['Icons/ProductImages/copilot/Frame7 (1).jpg',
-                    'Icons/ProductImages/copilot/copilot_lightbox-e1708533105529.jpg',
-                    'Icons/ProductImages/copilot/copilot_grounded (1).jpg',
-                    'Icons/ProductImages/copilot/copilot_flying.jpg',
-
-                ], description: "The Spec5 Copilot is a personal LoRa assistant designed to turn your drone or UAS into a mobile LoRa antenna tower, significantly extending the range of your network. Equipped with GPS tracking, the Copilot monitors the position of your UAS, ensuring you can track its location even if the drone's battery dies. Its integration with LoRa mesh networks enables seamless communication and real-time updates, making it a powerful tool for expanding your network's capabilities. Compact and lightweight, the Copilot is ideal for aerial applications, group expeditions, and emergency setups where reliable communication and tracking are essential.",
-                shopifyId: 'your-shopify-product-id'
-            },
-            // Add other products similarly
-        };
-
-        // Modal handling
-        const modal = document.querySelector('.modal-backdrop');
-        const closeButton = document.querySelector('.modal-close');
-        const buyButton = document.querySelector('.buy-button');
-
-        function showProductModal(productId) {
-            const product = productData[productId];
-            if (!product) return;
-
-            // Update modal content
-            modal.querySelector('.product-title').textContent = product.name;
-            modal.querySelector('.product-price').textContent = product.price;
-            modal.querySelector('.product-description').textContent = product.description;
-
-            // Setup carousel
-            const slidesContainer = modal.querySelector('.carousel-slides');
-            const dotsContainer = modal.querySelector('.carousel-dots');
-            let currentSlide = 0;
-
-            // Clear previous content
-            slidesContainer.innerHTML = '';
-            dotsContainer.innerHTML = '';
-
-            // Convert single image to array if necessary
-            const images = Array.isArray(product.images) ? product.images : [product.image];
-
-            // Add images to carousel
-            images.forEach((imgSrc, index) => {
-                // Add image
-                const img = document.createElement('img');
-                img.src = imgSrc;
-                img.alt = `${product.name} - Image ${index + 1}`;
-                slidesContainer.appendChild(img);
-
-                // Add dot
-                const dot = document.createElement('div');
-                dot.className = `dot ${index === 0 ? 'active' : ''}`;
-                dot.addEventListener('click', () => goToSlide(index));
-                dotsContainer.appendChild(dot);
-            });
-
-            // Show modal
-            modal.style.display = 'flex';
-
-            // Setup carousel controls if there are multiple images
-            if (images.length > 1) {
-                const prevBtn = modal.querySelector('.carousel-btn.prev');
-                const nextBtn = modal.querySelector('.carousel-btn.next');
-
-                function updateSlides() {
-                    slidesContainer.style.transform = `translateX(-${currentSlide * 300}px)`;
-                    dotsContainer.querySelectorAll('.dot').forEach((dot, index) => {
-                        dot.classList.toggle('active', index === currentSlide);
-                    });
-                }
-
-                function goToSlide(index) {
-                    currentSlide = index;
-                    updateSlides();
-                }
-
-                prevBtn.onclick = () => {
-                    currentSlide = (currentSlide - 1 + images.length) % images.length;
-                    updateSlides();
-                };
-
-                nextBtn.onclick = () => {
-                    currentSlide = (currentSlide + 1) % images.length;
-                    updateSlides();
-                };
-            }
-        }
-
-        // Update your device links to use onclick instead of href
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.device-name').forEach(device => {
-                device.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const productId = device.getAttribute('data-product-id');
-                    showProductModal(productId);
-                });
-            });
-        });
-
-        // Close modal when clicking close button or outside
-        closeButton.onclick = () => modal.style.display = 'none';
-        modal.onclick = (e) => {
-            if (e.target === modal) modal.style.display = 'none';
-        };
-
-        // Handle buy button click
-        buyButton.onclick = () => {
-            // Add Shopify cart functionality here
-            // You can use the Shopify Buy SDK or redirect to your store
-        };
-
-    </script>
-</body>
-
+  </body>
 </html>
+<script src="all.js"></script>
