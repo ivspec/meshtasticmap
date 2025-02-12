@@ -39,6 +39,74 @@ const RANGES = {
   "node-medium": 16093.44,
   "node-large": 32186.88,
 };
+/* ===================== SEARCH BAR FUNCTIONALITY ===================== */
+
+function searchLocation() {
+  const searchInput = document.getElementById('location-search').value;
+  if (!searchInput) return;
+
+  // Use the existing MAPBOX_ACCESS_TOKEN from your code
+  const geocodingUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchInput)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&limit=1`;
+
+  // Show loading state
+  const searchButton = document.querySelector('.search-container button');
+  searchButton.textContent = 'Searching...';
+  searchButton.disabled = true;
+
+  fetch(geocodingUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        
+        // Fly to the location
+        map.flyTo({
+          center: [lng, lat],
+          zoom: 14,
+          essential: true
+        });
+
+        // Add a temporary marker
+        const el = document.createElement('div');
+        el.className = 'search-marker';
+        el.style.width = '15px';
+        el.style.height = '15px';
+        el.style.backgroundColor = '#FF5733';
+        el.style.borderRadius = '50%';
+        el.style.border = '2px solid white';
+
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat([lng, lat])
+          .addTo(map);
+
+        // Remove the marker after 5 seconds
+        setTimeout(() => marker.remove(), 5000);
+      } else {
+        alert('Location not found. Please try another search.');
+      }
+    })
+    .catch(error => {
+      console.error('Error searching location:', error);
+      alert('Error searching for location. Please try again.');
+    })
+    .finally(() => {
+      // Reset button state
+      searchButton.textContent = 'Search';
+      searchButton.disabled = false;
+    });
+}
+
+// Add event listener for Enter key in search input
+document.getElementById('location-search').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    searchLocation();
+  }
+});
 
 /* ===================== INITIALIZE THE MAP ===================== */
 const map = new mapboxgl.Map({
