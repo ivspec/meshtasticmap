@@ -14,8 +14,9 @@ const mapControls = document.querySelector(".map-controls");
 
 mapControlsToggle.addEventListener("click", () => {
   console.log("Toggle clicked");
-  mapControls.classList.toggle("hidden");
+  mapControls.classList.toggle("collapsed");
 });
+
 
 
 
