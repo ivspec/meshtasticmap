@@ -578,12 +578,18 @@ body {
   transition: transform 0.3s ease;
 }
 
+/* Ensure the arrow rotates only when the menu is closed */
 .map-controls-toggle svg {
   transition: transform 0.3s ease;
 }
 
 .map-controls.hidden .map-controls-toggle svg {
   transform: rotate(180deg);
+}
+
+/* Ensure the map controls actually disappear when closed */
+.map-controls.hidden {
+  display: none;
 }
 
 
