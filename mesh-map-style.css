@@ -575,17 +575,21 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   font-family: "Inter", sans-serif;
   color: #fff;
-  transition: transform 0.3s ease;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  overflow: hidden;
+  max-height: 300px; /* Adjust this based on content height */
 }
 
-.map-controls.hidden {
-  display: none;
+.map-controls.collapsed {
+  max-height: 40px; /* Enough to show the title and toggle */
+  padding: 5px 20px; /* Reduce padding for compact look */
 }
 
+/* Ensure the toggle button stays visible */
 .map-controls-toggle {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 5px;
+  right: 5px;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -597,13 +601,10 @@ body {
   transition: transform 0.3s ease;
 }
 
-.map-controls-toggle svg {
-  transition: transform 0.3s ease;
-}
-
-.map-controls.hidden .map-controls-toggle svg {
+.map-controls.collapsed .map-controls-toggle svg {
   transform: rotate(180deg);
 }
+
 
 
 
