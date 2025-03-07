@@ -563,6 +563,10 @@ body {
   display: block;
 }
 
+.map-controls.hidden {
+  display: none;
+}
+
 
   #measure-distance {
     padding: 8px 12px;
