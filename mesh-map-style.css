@@ -578,9 +578,14 @@ body {
   transition: transform 0.3s ease;
 }
 
-.map-controls.hidden .map-controls-toggle {
+.map-controls-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.map-controls.hidden .map-controls-toggle svg {
   transform: rotate(180deg);
 }
+
 
 
 
