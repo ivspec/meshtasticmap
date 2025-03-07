@@ -563,6 +563,25 @@ body {
   display: block;
 }
 
+.map-controls {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #0f0f0ff2;
+  border-radius: 8px;
+  padding: 20px;
+  width: 250px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: "Inter", sans-serif;
+  color: #fff;
+  transition: transform 0.3s ease;
+}
+
+.map-controls.hidden {
+  display: none;
+}
+
 .map-controls-toggle {
   position: absolute;
   top: 10px;
@@ -578,18 +597,12 @@ body {
   transition: transform 0.3s ease;
 }
 
-/* Ensure the arrow rotates only when the menu is closed */
 .map-controls-toggle svg {
   transition: transform 0.3s ease;
 }
 
 .map-controls.hidden .map-controls-toggle svg {
   transform: rotate(180deg);
-}
-
-/* Ensure the map controls actually disappear when closed */
-.map-controls.hidden {
-  display: none;
 }
 
 
