@@ -14,15 +14,8 @@ const mapControls = document.querySelector(".map-controls");
 
 mapControlsToggle.addEventListener("click", () => {
   mapControls.classList.toggle("hidden");
-
-  // Change arrow direction
-  const arrow = mapControlsToggle.querySelector("svg");
-  if (mapControls.classList.contains("hidden")) {
-    arrow.style.transform = "rotate(180deg)";
-  } else {
-    arrow.style.transform = "rotate(0deg)";
-  }
 });
+
 
 
 
