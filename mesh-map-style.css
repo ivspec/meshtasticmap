@@ -549,7 +549,20 @@ body {
     flex-direction: column;
     gap: 10px;
   }
-  
+
+    .logo-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+    }
+    
+    .logo {
+      height: 40px; /* Adjust based on your logo size */
+      width: auto;
+      display: block;
+    }
+
   #measure-distance {
     padding: 8px 12px;
     background: #04ff85;
