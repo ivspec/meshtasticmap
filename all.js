@@ -9,6 +9,14 @@ let currentStyle = "mapbox://styles/mapbox/dark-v11";
 const coordinatesEl = document.getElementById("coordinates");
 const menu = document.querySelector(".menu");
 const toggleButton = document.querySelector(".toggle-button");
+const mapControls = document.querySelector(".map-controls");
+
+// Toggle map controls visibility
+toggleButton.addEventListener("click", () => {
+  mapControls.classList.toggle("hidden");
+  toggleButton.classList.toggle("active");
+});
+
 const styleToggleButton = document.querySelector(".style-toggle");
 const elevationToggle = document.getElementById("elevationToggle");
 const terrainToggle = document.getElementById("designModeToggle");
