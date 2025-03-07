@@ -8,14 +8,13 @@ let currentStyle = "mapbox://styles/mapbox/dark-v11";
 // DOM Elements
 const coordinatesEl = document.getElementById("coordinates");
 const menu = document.querySelector(".menu");
-const toggleButton = document.querySelector(".toggle-button");
+const mapControlsToggle = document.querySelector(".map-controls-toggle");
 const mapControls = document.querySelector(".map-controls");
 
-// Toggle map controls visibility
-toggleButton.addEventListener("click", () => {
+mapControlsToggle.addEventListener("click", () => {
   mapControls.classList.toggle("hidden");
-  toggleButton.classList.toggle("active");
 });
+
 
 const styleToggleButton = document.querySelector(".style-toggle");
 const elevationToggle = document.getElementById("elevationToggle");
